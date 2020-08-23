@@ -79,7 +79,7 @@ EfficientDet(D3-D8) have a excellent  accuracy but it can not real time detect e
 - [x] Optimized Anchors
 - [ ] label smooth(i do not recommend to use label smooth in object detection, you can use it in single classifier task)
 - [ ] ATSS [Adaptive Training Sample Selection]()
-- [ ] Mish
+- [x] Mish
 - [ ] MixUp
 - [ ] Genetic Algorithm
 - [ ] WBF(Weighted-Boxes-Fusion)  postprocess <https://arxiv.org/abs/1910.13302>
