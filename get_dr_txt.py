@@ -26,7 +26,7 @@ class MapYolo(YOLO):
 
     def __init__(self, **kwargs):
         super(MapYolo, self).__init__(**kwargs)
-        self.scores = CONFIG.DETECT.SCORE
+        self.score = CONFIG.DETECT.SCORE
         self.iou = CONFIG.DETECT.IOU
         self.resolution = CONFIG.DETECT.RESOLUTION
 
@@ -74,7 +74,7 @@ class MapYolo(YOLO):
         f = open("./mAP/detection-results/" + image_id + ".txt", "w")
 
         # use letter box to resize the original img
-        new_image_size = self.resulition
+        new_image_size = self.resolution
         boxed_image = letterbox_image(image, new_image_size)
         image_data = np.array(boxed_image, dtype='float32')
         image_data /= 255.
