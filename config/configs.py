@@ -9,51 +9,56 @@ import easydict
 
 CONFIG = easydict.EasyDict()
 
-# evaluation
+# ######################################################################################
+# evaluation(calculate mAP)
 CONFIG.DETECT = easydict.EasyDict()
 
 CONFIG.DETECT.SCORE = 0.3
-CONFIG.DETECT.IOU = 0.5
+CONFIG.DETECT.IOU = 0.43
 CONFIG.DETECT.RESOLUTION = (416, 416)
 CONFIG.DETECT.mAP_THRES = 0.5
+CONFIG.DETECT.NMS_METHOD = 'conventional'
+CONFIG.DETECT.DIOU = 0.41
 
-
+# ######################################################################################
 # prediction
 CONFIG.PREDICT = easydict.EasyDict()
-CONFIG.PREDICT.WEIGHTS = 'logs/yolo4_weight.h5'
+CONFIG.PREDICT.WEIGHTS = 'logs/second/ep060-loss96.896.h5'
 CONFIG.PREDICT.ANCHOR_PATH = 'model_data/yolo4_anchors.txt'
-CONFIG.PREDICT.CLASS_PATH = 'model_data/coco_classes.txt'
-CONFIG.PREDICT.SCORE = 0.2
-CONFIG.PREDICT.IOU = 0.5
-CONFIG.PREDICT.RESOLUTION = (608, 608)
+CONFIG.PREDICT.CLASS_PATH = 'model_data/danger_source_classes.txt'
+CONFIG.PREDICT.SCORE = 0.1
+CONFIG.PREDICT.IOU = 0.4
+CONFIG.PREDICT.RESOLUTION = (416, 416)
 CONFIG.PREDICT.MAX_BOXES = 40
 
+# ######################################################################################
 # train
 CONFIG.TRAIN = easydict.EasyDict()
 
 CONFIG.TRAIN.LR_STAGE1 = 0.001
 CONFIG.TRAIN.LR_STAGE2 = 0.0001  # it is better to smaller than lr_stage1
-# CONFIG.TRAIN.BATCH1 = 32
-CONFIG.TRAIN.BATCH1 = 16  # when i use mosaic aug, i am used to make it smaller.
+CONFIG.TRAIN.BATCH1 = 32
+# CONFIG.TRAIN.BATCH1 = 16  # when i use mosaic aug, i am used to make it smaller.
 CONFIG.TRAIN.BATCH2 = 4  # it is depending on you GPU memory
 CONFIG.TRAIN.EPOCH1 = 50  # it is enough for transfer training in stage 1
-CONFIG.TRAIN.EPOCH2 = 250  # fine tuning needs more epochs
-CONFIG.TRAIN.TRANSFER = False
-CONFIG.TRAIN.IOU_THRESHOLD = 0.3
+CONFIG.TRAIN.EPOCH2 = 300  # fine tuning needs more epochs
+CONFIG.TRAIN.TRANSFER = True
+CONFIG.TRAIN.IOU_THRESHOLD = 0.213  # i set it  the same as darknet-yolo4.cfg
 
 CONFIG.TRAIN.COS_INTERVAL = [0.05, 0.15, 0.30, 0.50]  # cosine anneal
+# CONFIG.TRAIN.COS_INTERVAL = [0.05]  # cosine anneal
 
-CONFIG.TRAIN.ANNO_PATH = '2088_trainval.txt'
-CONFIG.TRAIN.VALID_PATH = '2088_test.txt'
+CONFIG.TRAIN.ANNO_PATH = './train_set/2088_trainval.txt'
+CONFIG.TRAIN.VALID_PATH = './train_set/2088_test.txt'
 CONFIG.TRAIN.TEST_PATH = ''
 CONFIG.TRAIN.CLASS_PATH = 'model_data/danger_source_classes.txt'
-CONFIG.TRAIN.ANCHOR_PATH = 'model_data/yolo_anchors.txt'
+CONFIG.TRAIN.ANCHOR_PATH = 'model_data/yolo4_anchors.txt'
 CONFIG.TRAIN.PRE_TRAINED_MODEL = 'logs/yolo4_weight.h5'
-CONFIG.TRAIN.SAVE_PATH = 'logs/first/'
+CONFIG.TRAIN.SAVE_PATH = 'logs/second/'
 CONFIG.TRAIN.SAVE_PERIOD = 10
 
 CONFIG.TRAIN.RESOLUTION = (416, 416)
-CONFIG.TRAIN.IGNORE_THRES = 0.5
+CONFIG.TRAIN.IGNORE_THRES = 0.7
 CONFIG.TRAIN.CONFIDENCE_FOCAL = False
 CONFIG.TRAIN.CLASS_FOCAL = False
 CONFIG.TRAIN.DIOU = False
@@ -74,7 +79,4 @@ CONFIG.DATASET.MULTIPROCESS = False  # windows can not support multiprocessing i
 CONFIG.DATASET.MOSAIC_AUG = True
 
 CONFIG.DATASET.WORKERS = 1
-CONFIG.DATASET.MAX_QUEUE = 32
-
-
-
+CONFIG.DATASET.MAX_QUEUE = 128

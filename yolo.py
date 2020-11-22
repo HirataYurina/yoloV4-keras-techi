@@ -118,8 +118,8 @@ class YOLO(object):
                 self.input_image_shape: [image.size[1], image.size[0]],
                 K.learning_phase(): 0
             })
-        # print(out_scores)
-        # print(out_boxes)
+        print(out_scores)
+        print(out_boxes)
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
 
         # starting draw bounding boxes
@@ -177,4 +177,4 @@ if __name__ == '__main__':
 
     image = Image.open('./img/test1.jpg')
     img = yolo.detect_image(image)
-    img.show()
+    # img.save('./img/demo/3.jpg')

@@ -20,5 +20,5 @@ while True:
     else:
         result = yolo.detect_image(image)
         result.show()
-        result.save('./img/result_girl.jpg')
+        # result.save('./img/result_girl.jpg')
 yolo.close_session()

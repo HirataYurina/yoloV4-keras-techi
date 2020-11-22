@@ -10,6 +10,8 @@ from PIL import Image
 import numpy as np
 from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 from config.configs import CONFIG
+import tensorflow as tf
+import keras.backend as K
 
 
 def compose(*funcs):
@@ -136,7 +138,8 @@ def get_random_mosaic_data(annotations,
                            max_boxes=CONFIG.AUG.MAX_BOXES,
                            hue=.1,
                            sat=1.5,
-                           val=1.5):
+                           val=1.5,
+                           jitter=0.2):
     """mosaic augment V1
     mosaic augment V1 can make every image be cropped to be suitable for four regions.
     But this lose variety of image scale because every image need to suitable for their region.
@@ -149,6 +152,7 @@ def get_random_mosaic_data(annotations,
         hue:         random hue transformation
         sat:         random sat transformation
         val:         random val transformation
+        jitter
 
     Returns:
         augment data with mosaic
@@ -177,9 +181,14 @@ def get_random_mosaic_data(annotations,
         boxes = np.array([np.array(list(map(int, box.split(',')))) for box in contents[1:]])
 
         # 1.resize
-        rand_scale = rand(scale_min, scale_max)
-        new_h = int(h * rand_scale)
-        new_w = int(new_h * (w / h))
+        new_ar = w / h * rand(1 - jitter, 1 + jitter) / rand(1 - jitter, 1 + jitter)
+        scale = rand(scale_min, scale_max)
+        if new_ar < 1:
+            new_h = int(scale * h)
+            new_w = int(new_h * new_ar)
+        else:
+            new_w = int(scale * w)
+            new_h = int(new_w / new_ar)
         img = img.resize((new_w, new_h), Image.BICUBIC)
 
         # 2.flip
@@ -233,6 +242,13 @@ def get_random_mosaic_data(annotations,
             boxes = boxes[np.logical_and(boxes_w > 1, boxes_y > 1)]
 
             boxes_data.append(boxes)
+        else:
+            # TODO: ######################################################################################
+            # TODO: have fixed bug:
+            # TODO: if len(boxes) <= 0, boxes not appended into boxes_data,
+            # TODO: so, when cropping the boxes, it will encounter errors because i use i in for loop
+            # TODO: ######################################################################################
+            boxes_data.append([])
 
     # 6.crop imgs
     cropx = np.random.randint(int(w * min_x), int(w * (1 - min_x)))
@@ -247,9 +263,9 @@ def get_random_mosaic_data(annotations,
 
     new_boxes = crop_boxes(boxes_data, cropx, cropy)
     num_boxes = len(new_boxes)
-    if num_boxes <= max_boxes:
+    if num_boxes <= max_boxes and num_boxes > 0:
         boxes[0:num_boxes] = new_boxes
-    else:
+    elif num_boxes > max_boxes:
         boxes = new_boxes[:max_boxes]
 
     return merge_img, boxes
@@ -261,52 +277,55 @@ def crop_boxes(boxes, cropx, cropy):
     cropped_boxes = []
 
     for i, boxes in enumerate(boxes):
-        if i == 0:
+        # TODO: ##############################################################
+        # TODO: have fixed bug that if boxes=[], there will have some errors
+        # TODO: ##############################################################
+        if i == 0 and len(boxes) > 0:
             boxes[..., [0, 2]] = np.minimum(cropx, boxes[..., [0, 2]])
             boxes[..., [1, 3]] = np.minimum(cropy, boxes[..., [1, 3]])
             boxes_w = boxes[..., 2] - boxes[..., 0]
             boxes_h = boxes[..., 3] - boxes[..., 1]
-            valid_boxes = boxes[np.logical_and(boxes_w >= 10, boxes_h >= 10)]
-            cropped_boxes.append(valid_boxes)
+            valid_boxes = boxes[np.logical_and(boxes_w >= 5, boxes_h >= 5)]
+            cropped_boxes.extend(valid_boxes)
 
-        if i == 1:
+        if i == 1 and len(boxes) > 0:
             boxes[..., [0, 2]] = np.maximum(cropx, boxes[..., [0, 2]])
             boxes[..., [1, 3]] = np.minimum(cropy, boxes[..., [1, 3]])
             boxes_w = boxes[..., 2] - boxes[..., 0]
             boxes_h = boxes[..., 3] - boxes[..., 1]
-            valid_boxes = boxes[np.logical_and(boxes_w >= 10, boxes_h >= 10)]
-            cropped_boxes.append(valid_boxes)
+            valid_boxes = boxes[np.logical_and(boxes_w >= 5, boxes_h >= 5)]
+            cropped_boxes.extend(valid_boxes)
 
-        if i == 2:
+        if i == 2 and len(boxes) > 0:
             boxes[..., [0, 2]] = np.minimum(cropx, boxes[..., [0, 2]])
             boxes[..., [1, 3]] = np.maximum(cropy, boxes[..., [1, 3]])
             boxes_w = boxes[..., 2] - boxes[..., 0]
             boxes_h = boxes[..., 3] - boxes[..., 1]
-            valid_boxes = boxes[np.logical_and(boxes_w >= 10, boxes_h >= 10)]
-            cropped_boxes.append(valid_boxes)
+            valid_boxes = boxes[np.logical_and(boxes_w >= 5, boxes_h >= 5)]
+            cropped_boxes.extend(valid_boxes)
 
-        if i == 3:
+        if i == 3 and len(boxes) > 0:
             boxes[..., [0, 2]] = np.maximum(cropx, boxes[..., [0, 2]])
             boxes[..., [1, 3]] = np.maximum(cropy, boxes[..., [1, 3]])
             boxes_w = boxes[..., 2] - boxes[..., 0]
             boxes_h = boxes[..., 3] - boxes[..., 1]
-            valid_boxes = boxes[np.logical_and(boxes_w >= 10, boxes_h >= 10)]
-            cropped_boxes.append(valid_boxes)
+            valid_boxes = boxes[np.logical_and(boxes_w >= 5, boxes_h >= 5)]
+            cropped_boxes.extend(valid_boxes)
 
-    return np.concatenate(cropped_boxes, axis=0)
+    return np.array(cropped_boxes)
 
 
 def get_random_mosaic_data_v2(annotations,
                               input_shape,
                               max_boxes=CONFIG.AUG.MAX_BOXES,
-                              jitter=0.3,
+                              jitter=0.2,
                               scale_min=0.5,
                               scale_max=2,
                               hue=.1,
                               sat=1.5,
                               val=1.5,
-                              min_x=0.3,
-                              min_y=0.3):
+                              min_x=0.4,
+                              min_y=0.4):
     """mosaic augment V2
     V2 can keep the variety of size in data augment
     But, V2 may produce some gray region that don't have background or foreground.
@@ -455,6 +474,8 @@ def get_random_mosaic_data_v2(annotations,
         valid_box_4 = crop_boxes_v2(box_data_4, point_41, point_42, point_43)
         valid_box.append(valid_box_4)
 
+    # TODO: fix this bug
+    # TODO: if valid_box=[], np.concatenate(valid_box, axis=0) will have errors
     valid_box = np.concatenate(valid_box, axis=0)
 
     boxes = np.zeros(shape=(max_boxes, 5), dtype='float32')
@@ -504,26 +525,118 @@ def crop_boxes_v2(boxes, point1, point2, point3):
     return valid_boxes
 
 
+def cal_iou(box1, box2, beta=0.6):
+    """calculate iou
+
+    Args:
+        box1: (4,) a tensor
+        box2: (n, 4[y1, x1, y2, x2]) a tensor
+        beta: usually be 0.6
+
+    Returns:
+        ious
+        dious
+
+    """
+    box1_min = box1[:2]
+    box1_max = box1[2:4]
+    box2_min = box2[..., :2]
+    box2_max = box2[..., 2:4]
+
+    insert_min = tf.maximum(box1_min, box2_min)
+    insert_max = tf.minimum(box1_max, box2_max)
+
+    box1_hw = box1_max - box1_min
+    box2_hw = box2_max - box2_min
+    box1_area = box1_hw[0] * box1_hw[1]
+    box2_area = box2_hw[..., 0] * box2_hw[..., 1]
+    insert_hw = tf.maximum(insert_max - insert_min, 0)
+    insert_area = insert_hw[..., 0] * insert_hw[..., 1]
+
+    ious = insert_area / (box1_area + box2_area - insert_area)
+
+    box1_center = (box1_min + box1_max) / 2.0
+    box2_center = (box2_min + box2_max) / 2.0
+    center_distance = tf.reduce_sum(tf.square(box1_center - box2_center), axis=-1)
+    diagonal_min = tf.minimum(box1_min, box2_min)
+    diagonal_max = tf.maximum(box1_max, box2_max)
+    diag_distance = tf.reduce_sum(tf.square(diagonal_min - diagonal_max), axis=-1)
+    dious = ious - tf.pow(center_distance / (diag_distance + tf.keras.backend.epsilon()), beta)
+
+    return ious, dious
+
+
+def diou_nms(boxes,
+             scores,
+             max_output_size,
+             diou_threshold):
+    """ implement diou nms by tensorflow2.2
+
+    Args:
+        boxes:            (n, 4)
+        scores:           (n,)
+        max_output_size:  scalar
+        diou_threshold:   scalar
+
+    Returns:
+        pick_id: a tensor
+
+    """
+    scores_sorted = tf.argsort(scores)
+    boxes_sorted = tf.gather(boxes, scores_sorted)
+
+    picked = tf.Variable([])
+
+    def cond(picked, boxes_sorted, scores_sorted):
+        return K.greater(K.shape(boxes_sorted)[0], 0) & K.greater(max_output_size, K.shape(picked)[0])
+
+    def body(picked, boxes_sorted, scores_sorted):
+        # picked.append(scores_sorted[-1])
+        picked = tf.concat([picked, [scores_sorted[-1]]], 0)
+
+        _, dious = cal_iou(boxes_sorted[-1], boxes_sorted[:-1])
+
+        remain_ids = tf.where(dious < diou_threshold)[..., 0]
+        scores_sorted = tf.gather(scores_sorted, remain_ids)
+        boxes_sorted = tf.gather(boxes_sorted, remain_ids)
+
+        return picked, boxes_sorted, scores_sorted
+
+    picked, boxes_sorted, scores_sorted = tf.while_loop(cond, body, [picked, boxes_sorted, scores_sorted],
+                                                        shape_invariants=[tf.TensorShape([None]),
+                                                                          tf.TensorShape([None, 4]),
+                                                                          tf.TensorShape([None])])
+
+    picked = tf.cast(picked, tf.int32)
+    return picked
+
+
 if __name__ == '__main__':
+
     # test mosaic augment
-    with open('../2088_trainval.txt') as f:
+    import cv2
+    with open('../train_set/2028_trainval.txt') as f:
         annotations = f.readlines()
         annotations = [anno.strip() for anno in annotations]
         # print(annotations)
 
-    merge_img, boxes = get_random_mosaic_data(annotations[4:8], input_shape=(416, 416))
-    merge_img = merge_img
+    n = len(annotations)
+    shuffle_num = n // 4
+    i = 5
+    while i <shuffle_num:
 
-    import cv2
+        image, boxes = get_random_mosaic_data(annotations[4 * i:4 * i + 4], (416, 416))
+        # image, boxes = get_random_data(annotations[i], (416, 416))
+        i = i + 1
 
-    boxes_wh = boxes[:, 2:4] - boxes[:, 0:2]
-    valid_mask = boxes_wh[:, 0] > 0
-    valid_boxes = boxes[valid_mask]
-    for box in valid_boxes:
-        cv2.rectangle(merge_img,
-                      (int(box[0]), int(box[1])),
-                      (int(box[2]), int(box[3])),
-                      color=(0, 255, 0),
-                      thickness=2)
-    cv2.imshow('img', merge_img)
-    cv2.waitKey(0)
+        for box in boxes:
+            cv2.rectangle(image,
+                          (int(box[0]), int(box[1])),
+                          (int(box[2]), int(box[3])),
+                          color=(0, 255, 0),
+                          thickness=2)
+        cv2.imshow('img', image)
+        cv2.waitKey(0)
+        # print(i)
+        # print(np.isnan(boxes).any())
+        # print(np.max(boxes) > 416)

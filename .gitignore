@@ -2,5 +2,9 @@
 /__pycache__
 /logs
 /VOCdevkit
-/2088_test.txt
-/2088_trainval.txt
+/train_set/2088_test.txt
+/train_set/2088_trainval.txt
+/mAP
+/mAP_result
+/train_set
+/img

@@ -7,14 +7,17 @@ from os import getcwd
 2088_test.txt
 '''
 
-sets = [('2088', 'trainval'), ('2088', 'test')]
+sets = [('2028', 'trainval'), ('2028', 'test')]
 
-classes = ["warning sign",
-           "no reflective cloth",
-           "reflective cloth",
-           "staircase",
-           "insulating tool",
-           "tool"]
+# classes = ["warning sign",
+#            "no reflective cloth",
+#            "reflective cloth",
+#            "staircase",
+#            "insulating tool",
+#            "tool"]
+
+classes = ["person",
+           "hat"]
 
 
 def convert_annotation(year, image_id, list_file):
@@ -29,7 +32,8 @@ def convert_annotation(year, image_id, list_file):
         for obj in root.iter('object'):
             difficult = obj.find('difficult').text
             cls = obj.find('name').text
-            if cls not in classes or int(difficult) == 1:
+            # if cls not in classes or int(difficult) == 1:
+            if cls not in classes:
                 continue
             cls_id = classes.index(cls)
             xmlbox = obj.find('bndbox')

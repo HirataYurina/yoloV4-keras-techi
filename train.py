@@ -83,7 +83,9 @@ def data_generator(annotation_lines,
         image_data = np.array(image_data)
         box_data = np.array(box_data)
         # get true_boxes
-        y_true = preprocess_true_boxes(box_data, input_shape, anchors, num_classes)
+        # y_true = preprocess_true_boxes(box_data, input_shape, anchors, num_classes)
+        y_true = preprocess_true_boxes_iou_thres(box_data, input_shape, anchors, num_classes,
+                                                 iou_threshold=CONFIG.TRAIN.IOU_THRESHOLD)
         # use yield to get generator
         yield [image_data, *y_true], np.zeros(batch_size)
 
@@ -121,7 +123,7 @@ def data_generator_mosaic_iou_thres(annotation_lines,
             if i == 0:
                 # shuffle dataset at begin of epoch
                 np.random.shuffle(annotation_lines)
-            image, box = get_random_mosaic_data_v2(annotation_lines[i:i + 4], input_shape)
+            image, box = get_random_mosaic_data(annotation_lines[4 * i:4 * i + 4], input_shape)
             image_data.append(image)
             box_data.append(box)
             i = (i + 1) % shuffle_num

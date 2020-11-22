@@ -9,7 +9,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.models import Model
 from keras.regularizers import l2
 from nets.darknet53 import csp_darknet_body
-from utils.utils import compose
+from utils.utils import compose, diou_nms
 from config.configs import CONFIG
 
 
@@ -256,7 +256,9 @@ def yolo_eval(yolo_outputs,
               image_shape,
               max_boxes=20,
               score_threshold=.6,
-              iou_threshold=.5):
+              iou_threshold=.5,
+              diou_threshold=.43,
+              nms_method='conventional'):
     """ yolo evaluate
 
     Args:
@@ -269,6 +271,8 @@ def yolo_eval(yolo_outputs,
 
         score_threshold: when score > score threshold, the anchor is positive
         iou_threshold: the threshold used in non max suppression
+        nms_method
+        diou_threshold
 
     Returns:
         boxes_, scores_, classes_
@@ -306,8 +310,11 @@ def yolo_eval(yolo_outputs,
         class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
 
         # NMS
-        nms_index = tf.image.non_max_suppression(
-            class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=iou_threshold)
+        if nms_method == 'conventional':
+            nms_index = tf.image.non_max_suppression(
+                class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=iou_threshold)
+        elif nms_method == 'diou':
+            nms_index = diou_nms(class_boxes, class_box_scores, max_boxes_tensor, diou_threshold)
 
         class_boxes = K.gather(class_boxes, nms_index)
         class_box_scores = K.gather(class_box_scores, nms_index)
@@ -329,9 +336,9 @@ if __name__ == '__main__':
 
     # yolo.load_weights('../logs/yolo4_weight.h5')
     #
-    # for layer in yolo.layers[-3:]:
-    #     print(layer.name)
-    # print(len(yolo.layers))
+    for layer in yolo.layers[-3:]:
+        print(layer.name)
+    print(len(yolo.layers))
 
     # from PIL import Image
     # from utils.utils import letterbox_image
