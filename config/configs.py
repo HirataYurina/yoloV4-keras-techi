@@ -23,11 +23,11 @@ CONFIG.DETECT.DIOU = 0.41
 # ######################################################################################
 # prediction
 CONFIG.PREDICT = easydict.EasyDict()
-CONFIG.PREDICT.WEIGHTS = 'logs/second/ep060-loss96.896.h5'
+CONFIG.PREDICT.WEIGHTS = 'logs/first/ep290-loss16.428.h5'
 CONFIG.PREDICT.ANCHOR_PATH = 'model_data/yolo4_anchors.txt'
 CONFIG.PREDICT.CLASS_PATH = 'model_data/danger_source_classes.txt'
-CONFIG.PREDICT.SCORE = 0.1
-CONFIG.PREDICT.IOU = 0.4
+CONFIG.PREDICT.SCORE = 0.3
+CONFIG.PREDICT.IOU = 0.43
 CONFIG.PREDICT.RESOLUTION = (416, 416)
 CONFIG.PREDICT.MAX_BOXES = 40
 
@@ -42,7 +42,7 @@ CONFIG.TRAIN.BATCH1 = 32
 CONFIG.TRAIN.BATCH2 = 4  # it is depending on you GPU memory
 CONFIG.TRAIN.EPOCH1 = 50  # it is enough for transfer training in stage 1
 CONFIG.TRAIN.EPOCH2 = 300  # fine tuning needs more epochs
-CONFIG.TRAIN.TRANSFER = True
+CONFIG.TRAIN.TRANSFER = False
 CONFIG.TRAIN.IOU_THRESHOLD = 0.213  # i set it  the same as darknet-yolo4.cfg
 
 CONFIG.TRAIN.COS_INTERVAL = [0.05, 0.15, 0.30, 0.50]  # cosine anneal
@@ -53,7 +53,7 @@ CONFIG.TRAIN.VALID_PATH = './train_set/2088_test.txt'
 CONFIG.TRAIN.TEST_PATH = ''
 CONFIG.TRAIN.CLASS_PATH = 'model_data/danger_source_classes.txt'
 CONFIG.TRAIN.ANCHOR_PATH = 'model_data/yolo4_anchors.txt'
-CONFIG.TRAIN.PRE_TRAINED_MODEL = 'logs/yolo4_weight.h5'
+CONFIG.TRAIN.PRE_TRAINED_MODEL = 'logs/second/trained_weights_stage_1.h5'
 CONFIG.TRAIN.SAVE_PATH = 'logs/second/'
 CONFIG.TRAIN.SAVE_PERIOD = 10
 

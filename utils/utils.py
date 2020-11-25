@@ -139,7 +139,7 @@ def get_random_mosaic_data(annotations,
                            hue=.1,
                            sat=1.5,
                            val=1.5,
-                           jitter=0.2):
+                           jitter=0.3):
     """mosaic augment V1
     mosaic augment V1 can make every image be cropped to be suitable for four regions.
     But this lose variety of image scale because every image need to suitable for their region.
@@ -162,7 +162,8 @@ def get_random_mosaic_data(annotations,
     min_x = 0.4
     min_y = 0.4
     scale_min = 1 - min(min_x, min_y)
-    scale_max = scale_min + 0.2
+    # scale_max = scale_min + 0.2
+    scale_max = scale_min + 0.6
 
     place_x = [0, int(min_x * w), 0, int(min_x * w)]
     place_y = [0, 0, int(min_y * h), int(min_y * h)]
@@ -615,7 +616,7 @@ if __name__ == '__main__':
 
     # test mosaic augment
     import cv2
-    with open('../train_set/2028_trainval.txt') as f:
+    with open('../train_set/2088_trainval.txt') as f:
         annotations = f.readlines()
         annotations = [anno.strip() for anno in annotations]
         # print(annotations)
